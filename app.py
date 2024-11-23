@@ -1,9 +1,8 @@
 from flask import Flask, request, send_file, render_template, redirect, url_for
 from docx import Document
-from docx2pdf import convert
 import PyPDF2
 import os
-import pythoncom
+import subprocess
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
@@ -33,7 +32,6 @@ def upload_file():
 def get_doc_metadata(filepath):
     doc = Document(filepath)
     properties = doc.core_properties
-    print(properties)
     metadata = {
         'Title': properties.title,
         'Author': properties.author,
@@ -62,22 +60,33 @@ def encrypt_pdf(pdf_path, password):
 
     return encrypted_pdf_path
 
+def convert_docx_to_pdf(docx_path):
+    # Use LibreOffice's CLI to convert DOCX to PDF
+    pdf_path = docx_path.replace('.docx', '.pdf')
+    try:
+        subprocess.run(
+            ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', UPLOAD_FOLDER, docx_path],
+            check=True
+        )
+        return pdf_path
+    except subprocess.CalledProcessError as e:
+        print(f"Error converting DOCX to PDF: {e}")
+        return None
 
 @app.route('/convert/<filename>')
 def convert_to_pdf(filename):
     password = request.args.get('password')
     docx_path = os.path.join(UPLOAD_FOLDER, filename)
-    pdf_path = os.path.join(UPLOAD_FOLDER, filename.replace('.docx', '.pdf'))
-    
-    pythoncom.CoInitialize()
-    
-    # Convert DOCX to PDF
-    convert(docx_path, pdf_path)
+    pdf_path = convert_docx_to_pdf(docx_path)
+
+    if not pdf_path or not os.path.exists(pdf_path):
+        return "Error during conversion. Please try again.", 500
 
     if password:
-        pdf_path = encrypt_pdf(pdf_path, password)
-
-    return send_file(pdf_path, as_attachment=True)
+        encrypted_pdf_path = encrypt_pdf(pdf_path, password)
+        return send_file(encrypted_pdf_path, as_attachment=True)
+    else:
+        return send_file(pdf_path, as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

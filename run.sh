@@ -1,5 +1,4 @@
+docker network create docx-to-pdf-network
+docker build -t docx-to-pdf:latest .
 
-docker build -t docx-to-pdf .
-
-docker run -d -p 5000:5000 --name docx_to_pdf_app docx-to-pdf
-echo "Application is running on http://localhost:5000"
+docker run -d -p 5000:5000 --network docx-to-pdf-network --name docx_to_pdf_app docx-to-pdf:latest
