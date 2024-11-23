@@ -143,5 +143,3 @@ project/
 - **PDF Encryption**: Uses `PyPDF2` to add password protection to PDFs.
 
 --- 
-
-This README provides all the necessary details for understanding, deploying, and extending the application.
