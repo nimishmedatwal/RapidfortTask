@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docx-to-pdf-deployment
+  labels:
+    app: docx-to-pdf
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: docx-to-pdf
+  template:
+    metadata:
+      labels:
+        app: docx-to-pdf
+    spec:
+      containers:
+      - name: docx-to-pdf
+        image: docx-to-pdf:latest
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - mountPath: /app/uploads
+          name: upload-storage
+        env:
+        - name: UPLOAD_FOLDER
+          value: "/app/uploads"
+      volumes:
+      - name: upload-storage
+        emptyDir: {}
